@@ -1,0 +1,33 @@
+USE [XNYZ]
+GO
+/****** Object:  StoredProcedure [dbo].[SP_RP_EcertReport2]    Script Date: 01/05/2016 15:27:10 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[SP_RP_EcertReport2]  --create by ChangChun for 统计全区各旗县从业人员总数
+--@subOrgan varchar(1)
+AS
+BEGIN
+	SET NOCOUNT ON;
+	IF 1=0 BEGIN
+	SET FMTONLY OFF
+	END
+	
+	CREATE TABLE #TMP (机构名称 varchar(100),旧版从业人员数量 INTEGER,新版从业人员数量 INTEGER);
+	
+	INSERT INTO #TMP select  c.organ AS 运管机构,count(*),0 as 旧版从业证数量 from  dbo.T_ECert a,TB_Organ c where ECERTSTATE = '从业'
+	AND a.ZIPAREA = c.ZIPAREA 
+	GROUP by c.organ order by 运管机构;
+	
+	UPDATE a SET a.新版从业人员数量 = b.新版从业证数量 
+	FROM #TMP AS a,(select  c.organ AS 运管机构,count(*) as 新版从业证数量 from  dbo.T_ECert2013 a,TB_Organ c where ECERTSTATE = '从业'
+	AND a.ZIPAREA = c.ZIPAREA GROUP by c.organ) AS b
+	WHERE a.机构名称 = b.运管机构 
+	
+	SELECT * FROM #TMP
+		
+END
+
+	
+	

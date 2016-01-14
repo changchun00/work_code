@@ -1,0 +1,60 @@
+USE [XNYZ]
+GO
+/****** Object:  StoredProcedure [dbo].[SP_RP_EcertReport1]    Script Date: 01/05/2016 15:26:02 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[SP_RP_EcertReport1]  --create by ChangChun for 统计全区从业人员总数
+--@subOrgan varchar(1)
+AS
+BEGIN
+	SET NOCOUNT ON;
+	IF 1=0 BEGIN
+	SET FMTONLY OFF
+	END
+	
+	CREATE TABLE #TMP (机构名称 varchar(100),旧版从业人员数量 INTEGER,新版从业人员数量 INTEGER);
+	
+	DECLARE @organ VARCHAR(100),@ecertNum INTEGER,@ecert2013Num INTEGER;
+	DECLARE C1 CURSOR FOR  SELECT DISTINCT SUBSTRING(convert(varchar(100),ziparea),1,4) FROM dbo.TB_Organ
+	OPEN C1
+	FETCH NEXT  FROM C1 INTO @organ
+	WHILE @@fetch_status = 0
+		BEGIN
+			INSERT INTO #TMP SELECT substring(convert(varchar(100),ziparea),1,4) as 区域编码 ,count(*),0 as 旧版版从业证数量 from T_ECert
+			WHERE ECERTSTATE = '从业' and substring(convert(varchar(100),ziparea),1,4) = @organ
+			GROUP by substring(convert(varchar(100),ziparea),1,4) order by 区域编码;
+			
+			UPDATE a SET a.新版从业人员数量 = b.新版从业证数量 
+			FROM #TMP AS a,(SELECT  substring(convert(varchar(100),ziparea),1,4) as 区域编码 ,count(*) as 新版从业证数量 from T_ECert2013
+			WHERE ECERTSTATE = '从业' and substring(convert(varchar(100),ziparea),1,4) = @organ
+			GROUP by substring(convert(varchar(100),ziparea),1,4) ) AS b
+			WHERE a.机构名称 = b.区域编码			
+		FETCH NEXT  FROM C1 INTO @organ
+		END
+	CLOSE C1
+	DEALLOCATE C1
+	UPDATE #TMP SET 机构名称 = (CASE 机构名称
+	WHEN '1500' THEN '内蒙古自治区交通运输管理局'
+WHEN '1501' THEN '呼和浩特市交通运输管理局'
+WHEN '1502' THEN '包头市交通运输管理处'
+WHEN '1503' THEN '乌海市交通运输管理局'
+WHEN '1504' THEN '赤峰市运输管理处'
+WHEN '1505' THEN '通辽市交通运输管理处'
+WHEN '1506' THEN '鄂尔多斯市交通运输管理处'
+WHEN '1507' THEN '呼伦贝尔市交通运输管理处'
+WHEN '1508' THEN '巴彦淖尔市交通运输管理处'
+WHEN '1509' THEN '乌兰察布市交通运输管理处'
+WHEN '1522' THEN '兴安盟交通运输管理处'
+WHEN '1525' THEN '锡林郭勒盟运输管理处'
+WHEN '1529' THEN '阿拉善盟交通运输管理'
+ELSE '其他' END
+)
+	
+	SELECT * FROM #TMP
+		
+END
+
+	
+	

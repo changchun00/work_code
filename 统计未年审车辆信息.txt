@@ -1,0 +1,36 @@
+USE [XNYZ]
+GO
+/****** Object:  StoredProcedure [dbo].[SP_RP_T_vehicleYearCheck]    Script Date: 01/05/2016 15:28:15 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[SP_RP_T_vehicleYearCheck]
+@ziparea VARCHAR(6),
+@year VARCHAR(4),
+@sort VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF 1=0 BEGIN
+    SET FMTONLY OFF
+    END
+    
+    CREATE table #TMP (车辆编号    NUMERIC(16,0), 车牌号 VARCHAR(12),经营范围 VARCHAR(20),车辆类型 VARCHAR(20),
+    道路运输证号 VARCHAR(12),本次年审日期 DATETIME,
+    下次年审日期 DATETIME,行政区域 VARCHAR(6));
+    
+    INSERT INTO #TMP
+    SELECT a.ID_VEHICLE,a.VEHICLEID,a.MGRSORT,a.VCLSORT,a.CCERTID,b.CURCHKDATE,b.NEXTCHKDATE,a.ZIPAREA 
+	FROM dbo.T_Vehicle a,dbo.T_VclFile b
+	WHERE a.ID_VEHICLE = b.ID_VCLFILE AND 
+	a.ZIPAREA = @ziparea AND YEAR(CURCHKDATE) = @year
+	AND a.MGRSORT = @sort
+	AND CAST(YEAR(b.NEXTCHKDATE) AS CHAR(4))+ CAST(MONTH(b.NEXTCHKDATE) AS CHAR(4)) <= CAST(YEAR(GETDATE()) AS CHAR(4))
+	+CAST(MONTH(GETDATE()) AS CHAR(4));
+	
+	
+    
+    SELECT * FROM #TMP;
+    
+    END  

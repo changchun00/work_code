@@ -1,0 +1,72 @@
+USE [XNYZ]
+GO
+/****** Object:  StoredProcedure [dbo].[SP_RP_VehicleReport1]    Script Date: 01/05/2016 15:28:41 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[SP_RP_VehicleReport1] --create by ChangChun for 统计营运车辆总数
+--@ziparea NUMERIC(6,0),
+@subOragan int
+AS
+BEGIN
+	 
+	SET NOCOUNT ON;
+	IF 1=0 BEGIN
+	SET FMTONLY OFF
+	end
+	--DECLARE
+	--@flag VARCHAR(1)
+	CREATE table #TMP (机构名称 VARCHAR(100),车辆总数 INTEGER);
+
+IF(@subOragan = 0) --不包含下属机构
+	BEGIN
+	INSERT INTO #TMP
+SELECT CASE WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1500' THEN '内蒙古自治区交通运输管理局'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1501' THEN '呼和浩特市交通运输管理局'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1502' THEN '包头市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1503' THEN '乌海市交通运输管理局'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1504' THEN '赤峰市运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1505' THEN '通辽市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1506' THEN '鄂尔多斯市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1507' THEN '呼伦贝尔市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1508' THEN '巴彦淖尔市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1509' THEN '乌兰察布市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1522' THEN '兴安盟交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1525' THEN '锡林郭勒盟运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1529' THEN '阿拉善盟交通运输管理'
+ELSE '其他'
+END AS 行政区域,
+COUNT(*) as 车辆数量 from T_Vehicle 
+where VCLSTATE = '营运' 
+GROUP BY 
+CASE WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1500' THEN '内蒙古自治区交通运输管理局'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1501' THEN '呼和浩特市交通运输管理局'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1502' THEN '包头市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1503' THEN '乌海市交通运输管理局'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1504' THEN '赤峰市运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1505' THEN '通辽市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1506' THEN '鄂尔多斯市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1507' THEN '呼伦贝尔市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1508' THEN '巴彦淖尔市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1509' THEN '乌兰察布市交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1522' THEN '兴安盟交通运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1525' THEN '锡林郭勒盟运输管理处'
+WHEN SUBSTRING(convert(varchar(100),ziparea),1,4) = '1529' THEN '阿拉善盟交通运输管理'
+ELSE '其他'
+END
+order by 行政区域;
+
+--SELECT * FROM #TMP;
+END
+IF(@subOragan = 1) --包含下属机构
+BEGIN
+	INSERT INTO #TMP
+	SELECT  c.organ AS 行政区域,COUNT(a.ID_Vehicle) as 车辆数量 from  T_Vehicle a,T_VclFile b,TB_Organ c where a.VCLSTATE = '营运' 
+	AND a.ID_VEHICLE = b.ID_VEHICLE and b.ZIPAREA = c.ZIPAREA 
+	GROUP by c.organ,b.ZIPAREA order by 车辆数量
+	
+	
+END
+SELECT * FROM #TMP;
+END
